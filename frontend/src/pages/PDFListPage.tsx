@@ -3,7 +3,7 @@ import { Card, List, Typography, Spin, message, Input } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import { FileTextOutlined } from '@ant-design/icons';
 import { pdfAPI } from '../api';
-import { PDFDocument } from '../types';
+import type { PDFDocument } from '../types';
 
 const { Title } = Typography;
 const { Search } = Input;

@@ -4,7 +4,7 @@ import { Document, Page, pdfjs } from 'react-pdf';
 import { Input, Button, List, Typography, Space, Card, message, Spin, Tag } from 'antd';
 import { ArrowLeftOutlined, SearchOutlined, ZoomInOutlined, ZoomOutOutlined } from '@ant-design/icons';
 import { pdfAPI } from '../api';
-import { SearchResult } from '../types';
+import type { SearchResult } from '../types';
 import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
 import 'react-pdf/dist/esm/Page/TextLayer.css';
 
@@ -12,7 +12,7 @@ import 'react-pdf/dist/esm/Page/TextLayer.css';
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 
 const { Search } = Input;
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 const PDFViewerPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
