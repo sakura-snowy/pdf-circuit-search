@@ -2,6 +2,8 @@
 
 一个基于Web的PDF电路图文档智能搜索系统，支持关键词搜索、智能定位、相关度排序、同义词识别等功能。
 
+**在线演示**: http://118.25.82.127
+
 ## 🌟 功能特性
 
 ### 核心功能
@@ -18,7 +20,7 @@
   - 示例：挂车控制模块 = Trailer Control Module = TCM
 - **💡 扩展性设计**：预留文档问答接口（可集成AI模型实现电路连接性问答）
 
-## 🏗️ 系统架构
+## 🏗️ 项目架构
 
 ```
 PDF电路图搜索系统
@@ -26,17 +28,17 @@ PDF电路图搜索系统
 │   ├── React 18 + TypeScript
 │   ├── React-PDF (PDF.js)
 │   ├── Ant Design UI
-│   └── Axios
+│   └── Axios HTTP客户端
 │
 ├── 后端 (Backend)
 │   ├── Node.js + Express
 │   ├── TypeScript
 │   ├── pdf-parse (文本提取)
+│   ├── URL-safe Base64编码
 │   └── 内存索引（全文搜索）
 │
-└── 部署 (Deployment)
-    ├── PM2 (进程管理)
-    └── Nginx (反向代理)
+└── PDF文件存储
+    └── 本地文件系统
 ```
 
 ## 🛠️ 技术栈
@@ -60,13 +62,6 @@ PDF电路图搜索系统
 | TypeScript | 5.3.3 | 类型安全 |
 | pdf-parse | 1.1.1 | PDF文本提取 |
 | CORS | 2.8.5 | 跨域支持 |
-
-### 部署环境
-- **服务器**：腾讯云 CVM (4核4G3M)
-- **操作系统**：Ubuntu/Linux
-- **进程管理**：PM2
-- **Web服务器**：Nginx
-- **Node版本**：18 LTS
 
 ## 🚀 快速开始
 
@@ -114,88 +109,7 @@ npm run dev
 #### 7. 访问应用
 在浏览器中打开 `http://localhost:5173`
 
-## 📦 生产部署
-
-### 方式一：使用自动化部署脚本
-
-#### 1. 初始化服务器环境
-```bash
-# 在服务器上运行
-bash setup-server.sh
-```
-
-#### 2. 配置部署脚本
-编辑 `deploy.sh`，修改以下配置：
-```bash
-SERVER_IP="your_server_ip"      # 你的服务器IP
-SERVER_USER="root"               # SSH用户名
-```
-
-#### 3. 配置Nginx
-编辑 `nginx.conf`，修改域名：
-```nginx
-server_name your_domain.com;    # 替换为你的域名或IP
-```
-
-#### 4. 执行部署
-```bash
-bash deploy.sh
-```
-
-### 方式二：手动部署
-
-#### 1. 构建前端
-```bash
-cd frontend
-npm run build
-# 构建产物在 frontend/dist/
-```
-
-#### 2. 构建后端
-```bash
-cd backend
-npm run build
-# 构建产物在 backend/dist/
-```
-
-#### 3. 上传文件到服务器
-```bash
-# 上传前端构建产物
-scp -r frontend/dist/* user@server:/var/www/pdf-search/frontend/
-
-# 上传后端构建产物和依赖
-scp -r backend/dist user@server:/var/www/pdf-search/backend/
-scp backend/package.json user@server:/var/www/pdf-search/backend/
-
-# 上传PDF文件
-scp -r pdfs/* user@server:/var/www/pdf-search/pdfs/
-```
-
-#### 4. 服务器端操作
-```bash
-# SSH登录服务器
-ssh user@server
-
-# 安装后端依赖
-cd /var/www/pdf-search/backend
-npm install --production
-
-# 配置环境变量
-cp .env.production .env
-
-# 使用PM2启动后端
-pm2 start dist/index.js --name pdf-search-backend
-pm2 save
-pm2 startup
-
-# 配置Nginx
-sudo cp nginx.conf /etc/nginx/sites-available/pdf-search
-sudo ln -s /etc/nginx/sites-available/pdf-search /etc/nginx/sites-enabled/
-sudo nginx -t
-sudo systemctl reload nginx
-```
-
-## 📖 使用说明
+## 📖 产品使用说明
 
 ### 浏览文档列表
 1. 打开网站首页
@@ -246,14 +160,25 @@ sudo systemctl reload nginx
   - 支持中文文本提取
 
 ### 3. 为什么使用内存索引而非数据库？
-- **考虑因素**：
-  - PDF文档数量有限（4个文件）
-  - 搜索性能要求高
-  - 部署简单，无需额外数据库服务
-  - 服务器重启时自动重建索引
-- **优化**：使用缓存机制减少重复解析
+**考虑因素**：
+- PDF文档数量适中（通常 < 100个文件）
+- 搜索性能要求高，内存检索速度更快
+- 部署简单，无需额外数据库服务
+- 服务器重启时自动重建索引，维护成本低
 
-### 4. 相关度算法设计
+**优化策略**：使用缓存机制减少重复解析
+
+### 4. URL-safe Base64编码
+**问题**：中文PDF文件名在URL中传输时会导致路由解析错误
+
+**解决方案**：
+- 标准Base64的 `+` 替换为 `-`
+- 标准Base64的 `/` 替换为 `_`
+- 移除结尾的 `=` 填充
+
+**实现位置**：`backend/src/services/pdfService.ts`
+
+### 5. 相关度算法设计
 ```typescript
 相关度得分 = 基础分 + 文本类型分 + 匹配次数分 + 长度因子分
 
@@ -267,10 +192,13 @@ sudo systemctl reload nginx
 ```
 
 ### 5. 同义词实现方案
-- **数据结构**：哈希表存储同义词组
-- **匹配策略**：双向匹配（中文↔英文）
-- **扩展性**：支持动态添加同义词
-- **示例**：
+**数据结构**：哈希表存储同义词组
+
+**匹配策略**：双向匹配（中文↔英文）
+
+**扩展性**：支持动态添加同义词
+
+**示例**：
 ```typescript
 {
   '油门踏板': ['踏板位置传感器', 'Accelerator Pedal Sensor', 'APS'],
@@ -284,82 +212,73 @@ sudo systemctl reload nginx
 PDF_text/
 ├── frontend/                 # 前端项目
 │   ├── src/
-│   │   ├── api/             # API调用
-│   │   ├── components/      # React组件
+│   │   ├── api/             # API调用封装
 │   │   ├── pages/           # 页面组件
 │   │   │   ├── PDFListPage.tsx      # 文档列表页
 │   │   │   └── PDFViewerPage.tsx    # PDF查看页
 │   │   ├── types/           # TypeScript类型定义
 │   │   └── App.tsx          # 根组件
-│   ├── .env                 # 开发环境变量
-│   ├── .env.production      # 生产环境变量
+│   ├── .env                 # 环境变量配置
 │   └── package.json
 │
 ├── backend/                 # 后端项目
 │   ├── src/
-│   │   ├── controllers/     # 控制器
-│   │   ├── routes/          # 路由
-│   │   ├── services/        # 业务逻辑
-│   │   │   └── pdfService.ts        # PDF处理服务
+│   │   ├── controllers/     # 控制器层
+│   │   ├── routes/          # 路由配置
+│   │   ├── services/        # 业务逻辑层
+│   │   │   └── pdfService.ts        # PDF处理服务（含URL-safe Base64）
 │   │   ├── types/           # TypeScript类型定义
-│   │   └── index.ts         # 入口文件
-│   ├── .env                 # 开发环境变量
-│   ├── .env.production      # 生产环境变量
+│   │   └── index.ts         # 应用入口
+│   ├── .env                 # 环境变量配置
 │   └── package.json
 │
 ├── pdfs/                    # PDF文件存储目录
-│   ├── 412-DFH1180E3...pdf
-│   ├── 江铃_福顺...pdf
-│   ├── 陕汽_轩德翼3...pdf
-│   └── 一汽解放_新款J6L...pdf
+│   └── .gitkeep             # 保持目录结构
 │
-├── nginx.conf               # Nginx配置文件
-├── deploy.sh                # 自动化部署脚本
-├── setup-server.sh          # 服务器环境初始化脚本
+├── .gitignore               # Git忽略配置
 └── README.md                # 项目文档
 ```
 
 ## 🔌 API文档
 
 ### 获取PDF列表
-```
+```http
 GET /api/pdfs
+
 Response: {
   success: true,
-  data: [
-    {
-      id: "base64_encoded_filename",
-      filename: "xxx.pdf",
-      filepath: "/path/to/file",
-      size: 1234567
-    }
-  ]
+  data: [{
+    id: "url_safe_base64_encoded_filename",
+    filename: "xxx.pdf",
+    filepath: "/path/to/file",
+    size: 1234567
+  }]
 }
 ```
 
 ### 获取PDF文件
-```
+```http
 GET /api/pdfs/:id/file
-Response: PDF文件流
+
+Response: PDF文件流 (application/pdf)
 ```
 
-### 搜索PDF
-```
+### 搜索PDF内容
+```http
 GET /api/pdfs/:id/search?query=关键词
+
 Response: {
   success: true,
   data: {
     documentId: "xxx",
     query: "油门踏板",
-    results: [
-      {
-        page: 10,
-        text: "油门踏板位置传感器",
-        context: "...",
-        relevanceScore: 85,
-        type: "title"
-      }
-    ],
+    results: [{
+      page: 10,
+      text: "油门踏板位置传感器",
+      context: "上下文内容...",
+      relevanceScore: 85,
+      type: "title"  // title | description | table | text
+    }],
     totalMatches: 5
   }
 }
@@ -367,40 +286,38 @@ Response: {
 
 ## 🎯 性能优化
 
-1. **PDF文本缓存**：首次提取后缓存，避免重复解析
+1. **PDF文本缓存**：首次提取后缓存在内存中，避免重复解析
 2. **按需加载**：仅加载当前页面的PDF内容
 3. **搜索优化**：使用正则表达式加速文本匹配
-4. **Nginx静态资源缓存**：提升前端资源加载速度
-5. **PM2集群模式**：可配置多进程提升并发能力
+4. **URL-safe编码**：避免中文文件名导致的路由问题
 
 ## 🐛 已知限制
 
-1. **大PDF文件**：超过32MB的PDF无法通过前端Read工具预览（后端可正常处理）
-2. **图片搜索**：不支持PDF中图片内文字的识别（仅支持文本层搜索）
-3. **跨PDF搜索**：当前仅支持单个PDF内搜索
-4. **实时高亮**：暂不支持PDF内关键词高亮显示
+1. **大文件处理**：超大PDF文件（>100MB）可能导致内存占用较高
+2. **图片文字识别**：不支持PDF中嵌入图片内文字的OCR识别
+3. **跨文档搜索**：当前仅支持单个PDF内搜索
+4. **关键词高亮**：暂不支持PDF viewer内的关键词高亮显示
 
 ## 🔮 未来优化方向
 
 - [ ] 支持PDF内关键词高亮显示
 - [ ] 支持跨多个PDF文档的全局搜索
-- [ ] 集成OCR识别PDF图片中的文字
-- [ ] 接入AI模型实现智能问答功能
-  - 示例："油门踏板连接到ECU的哪些针脚号？"
-- [ ] 添加搜索历史记录
-- [ ] 支持导出搜索结果
-- [ ] 优化移动端体验
+- [ ] 集成OCR技术识别PDF图片中的文字
+- [ ] 接入大语言模型实现智能问答（如："油门踏板连接到哪些针脚？"）
+- [ ] 添加搜索历史记录功能
+- [ ] 支持搜索结果导出为Excel/Word
+- [ ] 优化移动端响应式体验
 
-## 📝 License
+## 📝 开源协议
 
 MIT License
 
 ## 👥 作者
 
-Generated with Claude Code
+Generated with [Claude Code](https://claude.com/claude-code)
 
 ---
 
-**项目状态**: ✅ 已完成核心功能，可投入生产使用
+**项目状态**: ✅ 核心功能已完成，可投入使用
 
 如有问题或建议，欢迎提交Issue！
