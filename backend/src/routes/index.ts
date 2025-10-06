@@ -1,5 +1,5 @@
 import express from 'express';
-import { getPDFList, getPDFInfo, searchPDF, getPDFFile, extractText } from '../controllers/pdfController';
+import { getPDFList, getPDFInfo, searchPDF, getPDFFile, extractText, askQuestion } from '../controllers/pdfController';
 
 const router = express.Router();
 
@@ -17,5 +17,8 @@ router.get('/pdfs/:id/text', extractText);
 
 // 搜索PDF
 router.get('/pdfs/:id/search', searchPDF);
+
+// 文档问答（POST请求）
+router.post('/pdfs/:id/ask', askQuestion);
 
 export default router;

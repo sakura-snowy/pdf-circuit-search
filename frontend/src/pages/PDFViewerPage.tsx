@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Document, Page, pdfjs } from 'react-pdf';
 import { Input, Button, List, Typography, Space, Card, message, Spin, Tag } from 'antd';
-import { ArrowLeftOutlined, SearchOutlined, ZoomInOutlined, ZoomOutOutlined } from '@ant-design/icons';
+import { ArrowLeftOutlined, SearchOutlined, ZoomInOutlined, ZoomOutOutlined, QuestionCircleOutlined } from '@ant-design/icons';
 import { pdfAPI } from '../api';
 import type { SearchResult } from '../types';
 import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
@@ -26,6 +26,9 @@ const PDFViewerPage: React.FC = () => {
   const [searching, setSearching] = useState(false);
   const [currentResultIndex, setCurrentResultIndex] = useState(0);
   const [pdfUrl, setPdfUrl] = useState<string>('');
+  const [question, setQuestion] = useState<string>('');
+  const [answer, setAnswer] = useState<string>('');
+  const [asking, setAsking] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -78,6 +81,25 @@ const PDFViewerPage: React.FC = () => {
     setCurrentPage(searchResults[prevIndex].page);
   };
 
+  const handleAskQuestion = async () => {
+    if (!question.trim() || !id) {
+      message.warning('请输入问题');
+      return;
+    }
+
+    try {
+      setAsking(true);
+      const response = await pdfAPI.askQuestion(id, question);
+      setAnswer(response.answer);
+      message.success('已获取回答');
+    } catch (error: any) {
+      message.error(error.response?.data?.error || '问答失败');
+      console.error(error);
+    } finally {
+      setAsking(false);
+    }
+  };
+
   const getTypeColor = (type: string) => {
     switch (type) {
       case 'title':
@@ -124,6 +146,28 @@ const PDFViewerPage: React.FC = () => {
               loading={searching}
             />
           </Space.Compact>
+
+          <Space.Compact style={{ width: '100%' }}>
+            <Search
+              placeholder="提问电路图相关问题，如：油门踏板连接到ECU的哪些针脚号"
+              enterButton={
+                <>
+                  <QuestionCircleOutlined /> 提问
+                </>
+              }
+              size="large"
+              value={question}
+              onChange={(e) => setQuestion(e.target.value)}
+              onSearch={handleAskQuestion}
+              loading={asking}
+            />
+          </Space.Compact>
+
+          {answer && (
+            <Card size="small" title="AI 回答" style={{ background: '#f0f5ff' }}>
+              <Text style={{ whiteSpace: 'pre-wrap' }}>{answer}</Text>
+            </Card>
+          )}
 
           {searchResults.length > 0 && (
             <Space>

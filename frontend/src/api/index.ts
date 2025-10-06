@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { PDFDocument, SearchResponse, APIResponse } from '../types';
+import type { PDFDocument, SearchResponse, APIResponse, QuestionResponse } from '../types';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
@@ -33,6 +33,15 @@ export const pdfAPI = {
       params: { query },
     });
     if (!response.data.data) throw new Error('Search failed');
+    return response.data.data;
+  },
+
+  // 文档问答
+  askQuestion: async (id: string, question: string): Promise<QuestionResponse> => {
+    const response = await api.post<APIResponse<QuestionResponse>>(`/pdfs/${id}/ask`, {
+      question,
+    });
+    if (!response.data.data) throw new Error('Question failed');
     return response.data.data;
   },
 };

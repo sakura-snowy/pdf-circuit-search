@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import pdfService from '../services/pdfService';
+import aiService from '../services/aiService';
 
 export const getPDFList = async (req: Request, res: Response) => {
   try {
@@ -109,6 +110,51 @@ export const extractText = async (req: Request, res: Response) => {
     res.status(500).json({
       success: false,
       error: error.message,
+    });
+  }
+};
+
+// 文档问答功能
+export const askQuestion = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { question } = req.body;
+
+    if (!question || typeof question !== 'string') {
+      return res.status(400).json({
+        success: false,
+        error: '问题参数是必需的',
+      });
+    }
+
+    // 检查AI服务是否配置
+    if (!aiService.isConfigured()) {
+      return res.status(503).json({
+        success: false,
+        error: 'AI服务未配置。请联系管理员设置 DEEPSEEK_API_KEY',
+      });
+    }
+
+    // 提取PDF文本
+    const pages = await pdfService.extractText(id);
+    const pdfContent = pages.map(p => p.text).join('\n\n');
+
+    // 调用AI服务回答问题
+    const answer = await aiService.askQuestion(pdfContent, question);
+
+    res.json({
+      success: true,
+      data: {
+        documentId: id,
+        question,
+        answer,
+      },
+    });
+  } catch (error: any) {
+    console.error('文档问答错误:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'AI服务调用失败',
     });
   }
 };

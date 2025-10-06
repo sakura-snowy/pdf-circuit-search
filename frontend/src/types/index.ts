@@ -30,3 +30,9 @@ export interface APIResponse<T> {
   data?: T;
   error?: string;
 }
+
+export interface QuestionResponse {
+  documentId: string;
+  question: string;
+  answer: string;
+}
