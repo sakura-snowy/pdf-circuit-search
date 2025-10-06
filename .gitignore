@@ -30,8 +30,24 @@ yarn-error.log*
 *.swp
 *.swo
 
-# PDF files (stored separately)
-pdfs/
+# PDF files (too large for git)
+pdfs/*.pdf
+
+# Temporary archives
+*.tar.gz
+*.zip
+*.tmp
+
+# PM2
+.pm2/
+
+# Backend build
+backend/dist/
+backend/*.tsbuildinfo
+
+# Frontend build
+frontend/dist/
+frontend/*.tsbuildinfo
 
 # Cache
 .cache/

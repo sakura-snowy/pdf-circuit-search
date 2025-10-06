@@ -5,6 +5,22 @@ import { PDFDocument, PageText, SearchResult } from '../types';
 
 const PDF_DIR = path.join(__dirname, '../../..', process.env.PDF_STORAGE_PATH || 'pdfs');
 
+// URL-safe Base64 编码辅助函数
+function toUrlSafeBase64(str: string): string {
+  return Buffer.from(str).toString('base64')
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=/g, '');
+}
+
+function fromUrlSafeBase64(str: string): string {
+  const base64 = str
+    .replace(/-/g, '+')
+    .replace(/_/g, '/')
+    + '='.repeat((4 - str.length % 4) % 4);
+  return Buffer.from(base64, 'base64').toString('utf-8');
+}
+
 // 同义词字典
 const SYNONYMS: Record<string, string[]> = {
   '油门踏板': ['踏板位置传感器', 'Accelerator Pedal Sensor', 'APS', 'accelerator pedal', '加速踏板'],
@@ -26,7 +42,7 @@ class PDFService {
         const filepath = path.join(PDF_DIR, filename);
         const stats = fs.statSync(filepath);
         return {
-          id: Buffer.from(filename).toString('base64'),
+          id: toUrlSafeBase64(filename),
           filename,
           filepath,
           size: stats.size,
@@ -203,7 +219,7 @@ class PDFService {
   // 获取PDF流
   getPDFStream(documentId: string): fs.ReadStream {
     const documents = fs.readdirSync(PDF_DIR);
-    const filename = Buffer.from(documentId, 'base64').toString('utf-8');
+    const filename = fromUrlSafeBase64(documentId);
     const filepath = path.join(PDF_DIR, filename);
 
     if (!fs.existsSync(filepath)) {
