@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Document, Page, pdfjs } from 'react-pdf';
 import { Input, Button, List, Typography, Space, Card, message, Spin, Tag } from 'antd';
-import { ArrowLeftOutlined, SearchOutlined, ZoomInOutlined, ZoomOutOutlined, QuestionCircleOutlined } from '@ant-design/icons';
+import { ArrowLeftOutlined, SearchOutlined, ZoomInOutlined, ZoomOutOutlined, QuestionCircleOutlined, CloseOutlined } from '@ant-design/icons';
 import { pdfAPI } from '../api';
 import type { SearchResult } from '../types';
 import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
@@ -164,7 +164,27 @@ const PDFViewerPage: React.FC = () => {
           </Space.Compact>
 
           {answer && (
-            <Card size="small" title="AI 回答" style={{ background: '#f0f5ff' }}>
+            <Card
+              size="small"
+              title="AI 回答"
+              extra={
+                <Button
+                  type="text"
+                  icon={<CloseOutlined />}
+                  onClick={() => setAnswer('')}
+                  size="small"
+                />
+              }
+              style={{
+                background: '#f0f5ff',
+                maxHeight: '200px',
+                overflow: 'hidden'
+              }}
+              bodyStyle={{
+                maxHeight: '150px',
+                overflowY: 'auto'
+              }}
+            >
               <Text style={{ whiteSpace: 'pre-wrap' }}>{answer}</Text>
             </Card>
           )}
