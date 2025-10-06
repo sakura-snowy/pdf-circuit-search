@@ -1,0 +1,29 @@
+{
+  "name": "pdf-circuit-search",
+  "version": "1.0.0",
+  "description": "PDF电路图智能搜索系统",
+  "scripts": {
+    "install:all": "cd backend && npm install && cd ../frontend && npm install --legacy-peer-deps",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "build:backend": "cd backend && npm run build",
+    "build:frontend": "cd frontend && npm run build",
+    "build:all": "npm run build:backend && npm run build:frontend",
+    "start:backend": "cd backend && npm start",
+    "start:frontend": "cd frontend && npm run preview"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/pdf-circuit-search.git"
+  },
+  "keywords": [
+    "pdf",
+    "search",
+    "circuit",
+    "diagram",
+    "react",
+    "express"
+  ],
+  "author": "",
+  "license": "MIT"
+}
